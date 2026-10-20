@@ -1,0 +1,75 @@
+name: Actualizar licitaciones
+
+on:
+  schedule:
+    - cron: "15 10 * * *"   # todos los días a las 10:15 UTC (7:15 en Chile, horario de verano)
+  workflow_dispatch:         # botón "Run workflow" para correrlo a mano
+  push:
+    branches: [main]
+    paths: ["dashboard.html", "collector.py", "traducciones.py", "seed.json"]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: actualizar
+  cancel-in-progress: false
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Recolectar licitaciones
+        # en un push solo se republica el sitio con los datos que ya hay
+        if: github.event_name != 'push'
+        env:
+          PYTHONIOENCODING: utf-8
+        run: python collector.py
+
+      - name: Traducir lo nuevo al español
+        if: github.event_name != 'push'
+        env:
+          PYTHONIOENCODING: utf-8
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python traducir_api.py
+
+      - name: Guardar datos en el repositorio
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "radar-bot"
+          git config user.email "radar-bot@users.noreply.github.com"
+          git add data.json state.json translations.json
+          git diff --cached --quiet || git commit -m "Actualización diaria $(date -u +%Y-%m-%d)"
+          git push
+
+      - name: Armar el sitio
+        run: |
+          mkdir -p _site
+          # dashboard.html es el cuerpo de la página (así lo publica claude.ai); aquí se le agrega el esqueleto HTML
+          {
+            printf '<!doctype html>\n<html lang="es">\n<head>\n<meta charset="utf-8">\n'
+            printf '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+            printf '<style>[hidden]{display:none!important}img{max-width:100%%}</style>\n</head>\n<body>\n'
+            cat dashboard.html
+            printf '\n</body>\n</html>\n'
+          } > _site/index.html
+          cp data.json _site/data.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - uses: actions/deploy-pages@v4
+        id: deploy

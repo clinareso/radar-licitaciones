@@ -1,0 +1,286 @@
+<title>Radar de Licitaciones Formación</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=Archivo+Narrow:wght@600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control room for tenders. Top bar with freshness + KPIs, filter rail, list on the left, the selected tender's key facts on the right. */
+:root{
+  --bg:#f3f6f6; --surface:#ffffff; --sunk:#eaf0ef; --ink:#14201f; --muted:#5b6b69; --line:#d9e1e0;
+  --accent:#0f6b63; --accent-soft:#e1f0ee; --accent-ink:#ffffff;
+  --ok:#1d7a3e; --ok-bg:#e3f3e8; --warn:#9a5a00; --warn-bg:#fbefd9; --bad:#a3302a; --bad-bg:#f8e3e1; --new:#5b3fb5; --new-bg:#ece7fb;
+  --f-display:"Archivo Narrow","Arial Narrow",Arial,sans-serif;
+  --f-body:"Archivo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1413; --surface:#151f1e; --sunk:#111918; --ink:#e6eeec; --muted:#93a5a2; --line:#263332;
+  --accent:#5cc4b8; --accent-soft:#183331; --accent-ink:#0e1413;
+  --ok:#6fd393; --ok-bg:#163223; --warn:#f0b75e; --warn-bg:#3a2a10; --bad:#f08a82; --bad-bg:#3b1a18; --new:#b8a6ff; --new-bg:#2a2245; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1413; --surface:#151f1e; --sunk:#111918; --ink:#e6eeec; --muted:#93a5a2; --line:#263332;
+  --accent:#5cc4b8; --accent-soft:#183331; --accent-ink:#0e1413;
+  --ok:#6fd393; --ok-bg:#163223; --warn:#f0b75e; --warn-bg:#3a2a10; --bad:#f08a82; --bad-bg:#3b1a18; --new:#b8a6ff; --new-bg:#2a2245; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 24px}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:1440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between}
+.brand{display:flex;flex-direction:column;gap:2px;min-width:0}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,3vw,34px);line-height:1.05;margin:0}
+.fresh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
+.src{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-family:var(--f-mono);font-size:11px}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ok)} .dot.err{background:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpi{all:unset;cursor:pointer;background:var(--surface);padding:10px 14px;display:flex;flex-direction:column;gap:1px}
+.kpi:hover,.kpi[aria-pressed="true"]{background:var(--accent-soft)}
+.kpi:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.kpi .n{font-family:var(--f-display);font-size:26px;font-weight:700;font-variant-numeric:tabular-nums}
+.kpi .l{font-size:12px;color:var(--muted)}
+.filters{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.filters input[type=search],.filters select{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 10px;min-width:0}
+.filters input[type=search]{flex:1 1 260px}
+.chk{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--muted);cursor:pointer;white-space:nowrap}
+.count{margin-left:auto;font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+.main{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:14px;align-items:start}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow:hidden;max-height:calc(100vh - 230px);overflow-y:auto}
+.row{all:unset;box-sizing:border-box;display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;width:100%;padding:11px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:hover{background:var(--sunk)}
+.row[aria-current="true"]{background:var(--accent-soft);box-shadow:inset 3px 0 0 var(--accent)}
+.row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.when{display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:5px;padding:4px 0;font-variant-numeric:tabular-nums}
+.when b{font-family:var(--f-display);font-size:20px;line-height:1}
+.when span{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em}
+.u0{background:var(--bad-bg);color:var(--bad)} .u1{background:var(--warn-bg);color:var(--warn)} .u2{background:var(--ok-bg);color:var(--ok)} .u3{background:var(--sunk);color:var(--muted)}
+.rt{font-weight:600;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.rm{font-size:12px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;gap:4px 10px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tag{font-family:var(--f-mono);font-size:10.5px;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--muted)}
+.tag.dig{border-color:var(--accent);color:var(--accent)} .tag.new{background:var(--new-bg);color:var(--new);border-color:transparent} .tag.ml{background:var(--accent-soft);color:var(--accent);border-color:transparent}
+.tag.star{color:var(--warn);border-color:var(--warn)}
+.detail{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:20px 22px;display:flex;flex-direction:column;gap:18px;position:sticky;top:max(12px,env(safe-area-inset-top,0px));max-height:calc(100vh - 230px);overflow-y:auto;min-width:0}
+.dh{display:flex;flex-direction:column;gap:6px}
+.dh h2{font-family:var(--f-display);font-size:22px;line-height:1.15;margin:0;text-wrap:balance}
+.buyer{color:var(--muted)}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:4px;border:1px solid var(--line);background:var(--surface);cursor:pointer;text-decoration:none;color:var(--ink);font-weight:500}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn:hover{border-color:var(--accent)}
+.back{display:none}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.fact{background:var(--surface);padding:10px 12px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.fact .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.fact .v{font-weight:600;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.fact .s{font-size:12px;color:var(--muted)}
+section.blk{display:flex;flex-direction:column;gap:8px}
+section.blk h3{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.desc{margin:0;max-width:75ch;white-space:pre-line}
+.tl{display:flex;flex-direction:column;gap:0;border-left:2px solid var(--line);margin-left:6px}
+.tl div{position:relative;padding:3px 0 9px 16px;display:flex;gap:10px;flex-wrap:wrap}
+.tl div::before{content:"";position:absolute;left:-7px;top:7px;width:12px;height:12px;border-radius:50%;background:var(--surface);border:2px solid var(--line)}
+.tl div.past::before{background:var(--line)}
+.tl div.key::before{border-color:var(--bad);background:var(--bad)}
+.tl .d{font-family:var(--f-mono);font-size:12px;min-width:84px;font-variant-numeric:tabular-nums}
+.crit{display:flex;flex-direction:column;gap:8px}
+.cr{display:grid;grid-template-columns:minmax(0,1fr) 46px;gap:4px 10px;align-items:center}
+.bar{grid-column:1 / -1;height:6px;background:var(--sunk);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent)}
+.cr .p{font-family:var(--f-mono);text-align:right;font-variant-numeric:tabular-nums}
+.cr small{grid-column:1 / -1;color:var(--muted)}
+.kv{display:grid;grid-template-columns:minmax(120px,max-content) minmax(0,1fr);gap:6px 14px;margin:0}
+.kv dt{color:var(--muted)} .kv dd{margin:0;overflow-wrap:anywhere}
+ul.items{margin:0;padding-left:18px}
+.langbox{display:flex;flex-wrap:wrap;align-items:center;gap:8px 16px;border:1px solid var(--accent);background:var(--accent-soft);border-radius:6px;padding:10px 14px}
+.langbox div{display:flex;flex-direction:column;gap:1px}
+.langbox .k{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.langbox .v{font-family:var(--f-display);font-size:18px;font-weight:700}
+.langbox .s{font-size:12.5px;color:var(--muted);flex:1 1 200px}
+.orig{border-left:3px solid var(--line);padding:4px 0 4px 14px;display:flex;flex-direction:column;gap:6px}
+.orig h3{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.otitle{font-weight:600;margin:0}
+.note{font-size:12.5px;color:var(--muted);background:var(--sunk);border-radius:5px;padding:9px 12px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+@media (max-width:900px){
+  .main{grid-template-columns:1fr}
+  .list{max-height:none}
+  .detail{position:static;max-height:none}
+  .app.reading .list,.app.reading .kpis,.app.reading .filters{display:none}
+  .app:not(.reading) .detail{display:none}
+  .back{display:inline-flex}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app" id="app">
+  <div class="top">
+    <div class="brand">
+      <span class="eyebrow">Educación · capacitación · e-learning · bootcamps</span>
+      <h1>Radar de licitaciones de formación</h1>
+    </div>
+    <div class="fresh" id="fresh">Cargando datos…</div>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <div class="filters">
+    <input type="search" id="q" placeholder="Buscar título, organismo, país o ID" aria-label="Buscar">
+    <select id="src" aria-label="Fuente"><option value="">Todas las fuentes</option></select>
+    <select id="reg" aria-label="Región"><option value="">Todas las regiones</option></select>
+    <select id="win" aria-label="Plazo de cierre">
+      <option value="">Cualquier cierre</option><option value="3">Cierra en 3 días</option><option value="7">Cierra en 7 días</option>
+      <option value="15">Cierra en 15 días</option><option value="30">Cierra en 30 días</option>
+    </select>
+    <select id="sort" aria-label="Orden">
+      <option value="deadline">Ordenar por cierre</option><option value="value">Ordenar por monto</option><option value="new">Más recientes primero</option>
+    </select>
+    <label class="chk"><input type="checkbox" id="dig"> Digital / e-learning</label>
+    <label class="chk"><input type="checkbox" id="fav"> Mis seguidas</label>
+    <span class="count" id="count"></span>
+  </div>
+
+  <div class="main">
+    <div class="list" id="list" role="list"></div>
+    <article class="detail" id="detail"><div class="empty">Elige una licitación de la lista para ver sus aspectos centrales.</div></article>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const MES=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"];
+const fdate=iso=>{if(!iso)return"—";const[y,m,d]=iso.slice(0,10).split("-");return `${+d} ${MES[m-1]} ${y}`};
+let DATA={items:[],sources:[]},TODAY=new Date().toISOString().slice(0,10),sel=null,kpiSel="";
+const store={get(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let favs=new Set(store.get("favs",[]));
+const CHILE=new Set(["Mercado Público","Compra Ágil"]);
+const T=i=>i.title_es||i.title;
+const origDesc=i=>((i.details||{}).description||i.summary||"");
+const isTranslated=i=>i.lang_src&&i.lang_src!=="es";
+const days=iso=>iso?Math.round((Date.parse(iso)-Date.parse(TODAY))/864e5):null;
+function urg(d){if(d===null)return 3;if(d<=0)return 0;if(d<=3)return 1;return 2}
+function money(v,cur){if(!v)return"";try{return new Intl.NumberFormat("es-CL",{style:"currency",currency:cur||"CLP",maximumFractionDigits:0}).format(v)}catch(e){return `${cur} ${Math.round(v).toLocaleString("es-CL")}`}}
+const valueOf=it=>it.value?money(it.value,it.currency):(it.value_text||"No informado");
+// rough CLP equivalents only for sorting by size
+const FX={CLP:1,USD:950,EUR:1030,GBP:1200,SEK:90,NOK:88,BRL:170,COP:.23,DOP:16,MXN:52,CAD:690};
+const sizeOf=it=>it.value?it.value*(FX[it.currency]||0):0;
+
+async function load(){
+  try{
+    const r=await fetch("data.json",{cache:"no-store"});
+    if(!r.ok)throw new Error(r.status);
+    DATA=await r.json(); TODAY=DATA.today||TODAY;
+  }catch(e){
+    $("fresh").textContent="No se pudieron cargar los datos. Vuelve a abrir la página en unos minutos.";
+    return;
+  }
+  const srcs=[...new Set(DATA.items.map(i=>i.source))].sort();
+  srcs.forEach(s=>$("src").add(new Option(s,s)));
+  ["Latinoamérica","Europa","Norteamérica","África","Asia-Pacífico","Medio Oriente","Global"].forEach(g=>{if(DATA.items.some(i=>i.region===g))$("reg").add(new Option(g,g))});
+  const g=new Date(DATA.generated);
+  $("fresh").innerHTML=`<span>Actualizado ${esc(g.toLocaleDateString("es-CL",{day:"numeric",month:"long"}))}, ${esc(g.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}))}</span>`+
+    DATA.sources.map(s=>`<span class="src" title="${s.ok?"":"La fuente no respondió en la última actualización"+(s.count?"; se muestran sus avisos anteriores que siguen abiertos":"")}"><i class="dot ${s.ok?"":"err"}"></i>${esc(s.name)} ${s.ok?s.count:s.count?s.count+" (copia anterior)":"sin respuesta"}</span>`).join("");
+  const saved=store.get("filters",{}); for(const k of ["src","reg","win","sort"]) if(saved[k]!==undefined&&[...$(k).options].some(o=>o.value===saved[k]))$(k).value=saved[k];
+  render(true);
+}
+
+function kpis(){
+  const it=DATA.items;
+  const K=[["","Todas vigentes",it.length],["cl","Mercado Público",it.filter(i=>i.source==="Mercado Público").length],["ca","Compra Ágil",it.filter(i=>i.source==="Compra Ágil").length],
+    ["intl","Radar internacional",it.filter(i=>!CHILE.has(i.source)).length],["new","Nuevas hoy",it.filter(i=>i.new).length],["week","Cierran en 7 días",it.filter(i=>{const d=days(i.deadline);return d!==null&&d<=7}).length],
+    ["digital","Digitales / e-learning",it.filter(i=>i.digital).length]];
+  $("kpis").innerHTML=K.map(([k,l,n])=>`<button type="button" class="kpi" data-k="${k}" aria-pressed="${kpiSel===k}"><span class="n">${n}</span><span class="l">${l}</span></button>`).join("");
+  $("kpis").querySelectorAll(".kpi").forEach(b=>b.onclick=()=>{kpiSel=kpiSel===b.dataset.k?"":b.dataset.k;render()});
+}
+
+function filtered(){
+  const q=$("q").value.trim().toLowerCase(),src=$("src").value,reg=$("reg").value,win=+$("win").value||0,dg=$("dig").checked,fv=$("fav").checked;
+  let L=DATA.items.filter(i=>{
+    const d=days(i.deadline);
+    if(src&&i.source!==src)return false; if(reg&&i.region!==reg)return false;
+    if(win&&(d===null||d>win))return false; if(dg&&!i.digital)return false; if(fv&&!favs.has(i.id))return false;
+    if(kpiSel==="new"&&!i.new)return false; if(kpiSel==="week"&&(d===null||d>7))return false;
+    if(kpiSel==="cl"&&i.source!=="Mercado Público")return false; if(kpiSel==="ca"&&i.source!=="Compra Ágil")return false;
+    if(kpiSel==="intl"&&CHILE.has(i.source))return false;
+    if(kpiSel==="digital"&&!i.digital)return false;
+    if(q&&![i.title,i.title_es,i.buyer,i.country,i.ref,i.source,i.summary,i.summary_es,i.lang_name].join(" ").toLowerCase().includes(q))return false;
+    return true;
+  });
+  const s=$("sort").value;
+  L.sort(s==="value"?(a,b)=>sizeOf(b)-sizeOf(a):s==="new"?(a,b)=>(b.first_seen||"").localeCompare(a.first_seen||"")||(b.published||"").localeCompare(a.published||""):(a,b)=>(a.deadline||"9999").localeCompare(b.deadline||"9999"));
+  return L;
+}
+
+function render(first){
+  kpis();
+  store.set("filters",{src:$("src").value,reg:$("reg").value,win:$("win").value,sort:$("sort").value});
+  const L=filtered();
+  $("count").textContent=`${L.length} de ${DATA.items.length}`;
+  $("list").innerHTML=L.length?L.map(i=>{const d=days(i.deadline),u=urg(d);
+    return `<button type="button" class="row" role="listitem" data-id="${esc(i.id)}" aria-current="${sel===i.id}">
+      <span class="when u${u}">${d===null?'<b>?</b><span>sin fecha</span>':d<=0?'<b>hoy</b><span>cierra</span>':`<b>${d}</b><span>${d===1?"día":"días"}</span>`}</span>
+      <span><span class="rt">${esc(T(i))}</span>
+      <span class="rm"><span>${esc(i.buyer||"")}</span><span>${esc(i.country)}</span><span>${esc(valueOf(i))}</span></span>
+      <span class="tags"><span class="tag ${i.multilateral?"ml":""}">${esc(i.source)}</span>${i.new?'<span class="tag new">nueva</span>':""}${i.digital?'<span class="tag dig">digital</span>':""}${isTranslated(i)?`<span class="tag">${esc(i.lang_name)}</span>`:""}${favs.has(i.id)?'<span class="tag star">seguida</span>':""}</span></span>
+    </button>`}).join(""):'<div class="empty">Ninguna licitación coincide con estos filtros. Quita alguno para ver más.</div>';
+  $("list").querySelectorAll(".row").forEach(b=>b.onclick=()=>show(b.dataset.id,true));
+  const keep=L.find(i=>i.id===sel);
+  if(keep)show(sel,false); else if(first&&L.length&&matchMedia("(min-width:901px)").matches)show(L[0].id,false);
+  else if(!keep&&sel){sel=null;$("detail").innerHTML='<div class="empty">Elige una licitación de la lista para ver sus aspectos centrales.</div>'}
+}
+
+const STEP={published:"Publicación",questions_end:"Fin de preguntas",answers:"Publicación de respuestas",close:"Cierre de ofertas",opening:"Apertura técnica",award:"Adjudicación estimada"};
+function show(id,user){
+  const i=DATA.items.find(x=>x.id===id); if(!i)return; sel=id;
+  document.querySelectorAll(".row").forEach(r=>r.setAttribute("aria-current",r.dataset.id===id));
+  const D=i.details||{},d=days(i.deadline),u=urg(d);
+  const dates=Object.entries(STEP).map(([k,l])=>[k,l,(D.dates||{})[k]||(k==="published"?i.published:k==="close"?i.deadline:"")]).filter(x=>x[2]);
+  const facts=[
+    ["Cierre",fdate(i.deadline)+(D.close_time?` · ${D.close_time} h`:""),d===null?"Fecha por confirmar":d<=0?"Cierra hoy":`Faltan ${d} día${d===1?"":"s"}`],
+    ["Monto estimado",valueOf(i),D.amount_basis||""],
+    ["Tipo",D.type?D.type.replace(/^Pública-Licitación Pública /,""):(i.kind||D.method||"—"),D.stages||""],
+    ["Duración",D.duration||"—",D.renewal?`Renovación: ${D.renewal}`:""],
+    ["País / región",i.country||"—",[D.region,D.comuna].filter(Boolean).join(" · ")||i.region],
+    ["Fuente",i.source,i.ref||""]];
+  const crit=(D.criteria||[]).filter(c=>c.name);
+  const cond=[["Unidad de compra",D.unit],["Proveedores cotizando",D.suppliers!=null&&D.suppliers!==""?String(D.suppliers):""],["Proyecto",D.project],["Método",D.method&&D.method!==i.kind?D.method:""],["Plazo de pago",D.payment],["Subcontratación",D.subcontracting],["Moneda",D.currency],["CPV",(D.cpv||[]).join(", ")],["Ciudad",D.city],["Idioma",i.lang],["Detectada por primera vez",fdate(i.first_seen)]].filter(x=>x[1]);
+  $("detail").innerHTML=`
+    <div class="dh">
+      <button type="button" class="btn back" id="back">← Volver a la lista</button>
+      <div class="tags"><span class="tag ${i.multilateral?"ml":""}">${esc(i.source)}</span>${i.new?'<span class="tag new">nueva hoy</span>':""}${i.digital?'<span class="tag dig">digital</span>':""}<span class="tag">${esc(i.region)}</span></div>
+      <h2>${esc(T(i))}</h2>
+      <span class="buyer">${esc(i.buyer||"")}</span>
+      <div class="actions">
+        <a class="btn primary" href="${esc(i.url)}" target="_blank" rel="noopener">Abrir en el portal ↗</a>
+        <button type="button" class="btn" id="favb">${favs.has(i.id)?"★ Dejar de seguir":"☆ Seguir"}</button>
+        <button type="button" class="btn" id="copyb">Copiar ID</button>
+      </div>
+    </div>
+    <div class="facts">${facts.map(([k,v,s])=>`<div class="fact"><span class="k">${k}</span><span class="v">${esc(v)}</span>${s?`<span class="s">${esc(s)}</span>`:""}</div>`).join("")}</div>
+    <div class="langbox">
+      <div><span class="k">Idioma de origen</span><span class="v">${esc(i.lang_name||"Sin identificar")}</span></div>
+      <span class="s">${!isTranslated(i)?"Texto original en español.":(i.title_es||i.summary_es)?"Título y descripción traducidos al español.":"Traducción pendiente: se agrega en la próxima actualización diaria."}</span>
+      ${isTranslated(i)?`<button type="button" class="btn" id="origb" aria-expanded="false">Ver texto original</button>`:""}
+    </div>
+    ${isTranslated(i)?`<div class="orig" id="orig" hidden><h3>Texto original · ${esc(i.lang_name)}</h3><p class="otitle">${esc(i.title)}</p>${origDesc(i)?`<p class="desc">${esc(origDesc(i).slice(0,2500))}</p>`:""}</div>`:""}
+    ${(i.summary_es||origDesc(i))?`<section class="blk"><h3>Objeto de la licitación${i.summary_es?" · traducido":""}</h3><p class="desc">${esc((i.summary_es||origDesc(i)).slice(0,1600))}</p></section>`:""}
+    ${dates.length>1?`<section class="blk"><h3>Etapas y plazos</h3><div class="tl">${dates.map(([k,l,v])=>`<div class="${v<TODAY?"past":""} ${k==="close"?"key":""}"><span class="d">${fdate(v)}</span><span>${l}</span></div>`).join("")}</div></section>`:""}
+    ${crit.length?`<section class="blk"><h3>Criterios de evaluación</h3><div class="crit">${crit.map(c=>`<div class="cr"><span>${esc(c.name)}</span><span class="p">${c.weight!=null?c.weight+"%":"—"}</span><span class="bar"><i style="width:${Math.min(100,c.weight||0)}%"></i></span>${c.note?`<small>${esc(c.note)}</small>`:""}</div>`).join("")}</div></section>`:""}
+    ${(D.guarantees||[]).length?`<section class="blk"><h3>Garantías requeridas</h3><dl class="kv">${D.guarantees.map(g=>`<dt>${esc(g.type)}</dt><dd>${esc([g.amount,g.currency].filter(Boolean).join(" "))||"Ver bases"}${g.expiry?` · vence ${esc(g.expiry)}`:""}</dd>`).join("")}</dl></section>`:""}
+    ${(D.items||[]).length?`<section class="blk"><h3>Productos o servicios</h3><ul class="items">${D.items.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></section>`:""}
+    ${cond.length?`<section class="blk"><h3>Condiciones y datos</h3><dl class="kv">${cond.map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl></section>`:""}
+    ${i.stale?`<p class="note">La fuente no respondió en la última actualización. Estos datos son de la vuelta anterior.</p>`:""}
+    ${i.source==="Compra Ágil"?`<p class="note">Compra Ágil es para compras de menos de 100 UTM. Se cotiza directo en Mercado Público, con plazos cortos de 1 a 5 días hábiles.</p>`:""}
+    ${i.curated?`<p class="note">Aviso curado a mano en la revisión del 19 de octubre de 2026. Esta fuente no tiene API pública, así que conviene confirmar plazos y bases en el portal.</p>`:""}
+    ${!crit.length&&!i.curated&&!CHILE.has(i.source)?`<p class="note">Los criterios, garantías y requisitos completos están en los documentos del aviso. Ábrelo en el portal para revisarlos.</p>`:""}`;
+  if($("origb"))$("origb").onclick=e=>{const o=$("orig"),b=e.currentTarget;o.hidden=!o.hidden;b.setAttribute("aria-expanded",!o.hidden);b.textContent=o.hidden?"Ver texto original":"Ocultar texto original"};
+  $("favb").onclick=()=>{favs.has(i.id)?favs.delete(i.id):favs.add(i.id);store.set("favs",[...favs]);render()};
+  $("copyb").onclick=e=>{const b=e.currentTarget;navigator.clipboard.writeText(i.ref||i.id).then(()=>{b.textContent="Copiado"},()=>{b.textContent=i.ref||i.id})};
+  $("back").onclick=()=>{$("app").classList.remove("reading");window.scrollTo(0,0)};
+  if(user){$("app").classList.add("reading");if(matchMedia("(max-width:900px)").matches)window.scrollTo(0,0);$("detail").scrollTop=0}
+}
+["q","src","reg","win","sort","dig","fav"].forEach(id=>$(id).addEventListener("input",()=>render()));
+load();
+</script>

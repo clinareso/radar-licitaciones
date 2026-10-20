@@ -1,0 +1,4 @@
+__pycache__/
+pendientes_*.json
+traducido_*.json
+_site/
