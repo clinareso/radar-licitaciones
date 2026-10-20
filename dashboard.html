@@ -131,6 +131,7 @@ ul.items{margin:0;padding-left:18px}
     <input type="search" id="q" placeholder="Buscar título, organismo, país o ID" aria-label="Buscar">
     <select id="src" aria-label="Fuente"><option value="">Todas las fuentes</option></select>
     <select id="reg" aria-label="Región"><option value="">Todas las regiones</option></select>
+    <select id="lang" aria-label="Idioma de origen"><option value="">Todos los idiomas</option></select>
     <select id="win" aria-label="Plazo de cierre">
       <option value="">Cualquier cierre</option><option value="3">Cierra en 3 días</option><option value="7">Cierra en 7 días</option>
       <option value="15">Cierra en 15 días</option><option value="30">Cierra en 30 días</option>
@@ -181,10 +182,12 @@ async function load(){
   const srcs=[...new Set(DATA.items.map(i=>i.source))].sort();
   srcs.forEach(s=>$("src").add(new Option(s,s)));
   ["Latinoamérica","Europa","Norteamérica","África","Asia-Pacífico","Medio Oriente","Global"].forEach(g=>{if(DATA.items.some(i=>i.region===g))$("reg").add(new Option(g,g))});
+  const langs={};DATA.items.forEach(i=>{const l=i.lang_name||"Sin identificar";langs[l]=(langs[l]||0)+1});
+  Object.entries(langs).sort((a,b)=>b[1]-a[1]).forEach(([l,n])=>$("lang").add(new Option(`${l} (${n})`,l)));
   const g=new Date(DATA.generated);
   $("fresh").innerHTML=`<span>Actualizado ${esc(g.toLocaleDateString("es-CL",{day:"numeric",month:"long"}))}, ${esc(g.toLocaleTimeString("es-CL",{hour:"2-digit",minute:"2-digit"}))}</span>`+
     DATA.sources.map(s=>`<span class="src" title="${s.ok?"":"La fuente no respondió en la última actualización"+(s.count?"; se muestran sus avisos anteriores que siguen abiertos":"")}"><i class="dot ${s.ok?"":"err"}"></i>${esc(s.name)} ${s.ok?s.count:s.count?s.count+" (copia anterior)":"sin respuesta"}</span>`).join("");
-  const saved=store.get("filters",{}); for(const k of ["src","reg","win","sort"]) if(saved[k]!==undefined&&[...$(k).options].some(o=>o.value===saved[k]))$(k).value=saved[k];
+  const saved=store.get("filters",{}); for(const k of ["src","reg","lang","win","sort"]) if(saved[k]!==undefined&&[...$(k).options].some(o=>o.value===saved[k]))$(k).value=saved[k];
   render(true);
 }
 
@@ -197,10 +200,11 @@ function kpis(){
 }
 
 function filtered(){
-  const q=$("q").value.trim().toLowerCase(),src=$("src").value,reg=$("reg").value,win=+$("win").value||0,dg=$("dig").checked,fv=$("fav").checked;
+  const q=$("q").value.trim().toLowerCase(),src=$("src").value,reg=$("reg").value,lang=$("lang").value,win=+$("win").value||0,dg=$("dig").checked,fv=$("fav").checked;
   let L=DATA.items.filter(i=>{
     const d=days(i.deadline);
     if(src&&i.source!==src)return false; if(reg&&i.region!==reg)return false;
+    if(lang&&(i.lang_name||"Sin identificar")!==lang)return false;
     if(win&&(d===null||d>win))return false; if(dg&&!i.digital)return false; if(fv&&!favs.has(i.id))return false;
     if(kpiSel==="new"&&!i.new)return false; if(kpiSel==="week"&&(d===null||d>7))return false;
     if(kpiSel==="cl"&&i.source!=="Mercado Público")return false; if(kpiSel==="ca"&&i.source!=="Compra Ágil")return false;
@@ -216,7 +220,7 @@ function filtered(){
 
 function render(first){
   kpis();
-  store.set("filters",{src:$("src").value,reg:$("reg").value,win:$("win").value,sort:$("sort").value});
+  store.set("filters",{src:$("src").value,reg:$("reg").value,lang:$("lang").value,win:$("win").value,sort:$("sort").value});
   const L=filtered();
   $("count").textContent=`${L.length} de ${DATA.items.length}`;
   $("list").innerHTML=L.length?L.map(i=>{const d=days(i.deadline),u=urg(d);
@@ -282,6 +286,6 @@ function show(id,user){
   $("back").onclick=()=>{$("app").classList.remove("reading");window.scrollTo(0,0)};
   if(user){$("app").classList.add("reading");if(matchMedia("(max-width:900px)").matches)window.scrollTo(0,0);$("detail").scrollTop=0}
 }
-["q","src","reg","win","sort","dig","fav"].forEach(id=>$(id).addEventListener("input",()=>render()));
+["q","src","reg","lang","win","sort","dig","fav"].forEach(id=>$(id).addEventListener("input",()=>render()));
 load();
 </script>
