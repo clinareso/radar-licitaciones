@@ -1,7 +1,8 @@
 @echo off
-rem Actualiza data.json con las licitaciones vigentes de todas las fuentes.
-rem La tarea programada diaria hace esto y además republica el dashboard.
+rem Baja la última versión del radar desde GitHub y abre el dashboard en este computador.
+rem La recolección diaria la hace GitHub; no hace falta correr el recolector aquí.
 cd /d "%~dp0"
-set PYTHONIOENCODING=utf-8
-python collector.py
-pause
+git pull --quiet
+start "" http://localhost:8000/dashboard.html
+echo Dashboard en http://localhost:8000/dashboard.html  (cierra esta ventana para detenerlo)
+python -m http.server 8000

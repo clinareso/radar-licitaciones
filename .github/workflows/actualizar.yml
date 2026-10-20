@@ -6,7 +6,7 @@ on:
   workflow_dispatch:         # botón "Run workflow" para correrlo a mano
   push:
     branches: [main]
-    paths: ["dashboard.html", "collector.py", "traducciones.py", "seed.json"]
+    paths: ["dashboard.html", "collector.py", "traducciones.py", "seed.json", "translations.json"]
 
 permissions:
   contents: write

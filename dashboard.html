@@ -34,7 +34,7 @@ h1{font-family:var(--f-display);font-weight:700;font-size:clamp(24px,3vw,34px);l
 .fresh{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12px;color:var(--muted)}
 .src{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;background:var(--surface);font-family:var(--f-mono);font-size:11px}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ok)} .dot.err{background:var(--bad)}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:6px;overflow:hidden}
 .kpi{all:unset;cursor:pointer;background:var(--surface);padding:10px 14px;display:flex;flex-direction:column;gap:1px}
 .kpi:hover,.kpi[aria-pressed="true"]{background:var(--accent-soft)}
 .kpi:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
@@ -103,6 +103,8 @@ ul.items{margin:0;padding-left:18px}
 .otitle{font-weight:600;margin:0}
 .note{font-size:12.5px;color:var(--muted);background:var(--sunk);border-radius:5px;padding:9px 12px}
 .empty{padding:40px 20px;text-align:center;color:var(--muted)}
+@media (max-width:760px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:420px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (max-width:900px){
   .main{grid-template-columns:1fr}
   .list{max-height:none}
@@ -189,8 +191,7 @@ async function load(){
 function kpis(){
   const it=DATA.items;
   const K=[["","Todas vigentes",it.length],["cl","Mercado Público",it.filter(i=>i.source==="Mercado Público").length],["ca","Compra Ágil",it.filter(i=>i.source==="Compra Ágil").length],
-    ["intl","Radar internacional",it.filter(i=>!CHILE.has(i.source)).length],["new","Nuevas hoy",it.filter(i=>i.new).length],["week","Cierran en 7 días",it.filter(i=>{const d=days(i.deadline);return d!==null&&d<=7}).length],
-    ["digital","Digitales / e-learning",it.filter(i=>i.digital).length]];
+    ["intl","Radar internacional",it.filter(i=>!CHILE.has(i.source)).length],["new","Nuevas hoy",it.filter(i=>i.new).length],["week","Cierran en 7 días",it.filter(i=>{const d=days(i.deadline);return d!==null&&d<=7}).length]];
   $("kpis").innerHTML=K.map(([k,l,n])=>`<button type="button" class="kpi" data-k="${k}" aria-pressed="${kpiSel===k}"><span class="n">${n}</span><span class="l">${l}</span></button>`).join("");
   $("kpis").querySelectorAll(".kpi").forEach(b=>b.onclick=()=>{kpiSel=kpiSel===b.dataset.k?"":b.dataset.k;render()});
 }
